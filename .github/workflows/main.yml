@@ -25,17 +25,15 @@ jobs:
         with:
           node-version: 20
 
-      - name: Prepare Web Directory
+      - name: Accept Android Licenses
         run: |
-          mkdir -p www
-          if [ -f index.html ]; then
-            cp index.html www/index.html
-          else
-            echo "<h1>Smart Khata</h1>" > www/index.html
-          fi
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      - name: Setup Project & Capacitor
+      - name: Setup Web Directory & Capacitor
         run: |
+          export CAPACITOR_NO_TELEMETRY=1
+          mkdir -p www
+          cp index.html www/index.html
           npm init -y
           npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
           node -e "const fs = require('fs'); fs.writeFileSync('capacitor.config.json', JSON.stringify({appId: 'com.smartkhata.app', appName: 'SmartKhata', webDir: 'www', bundledWebRuntime: false}, null, 2));"
@@ -46,7 +44,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK to Artifacts
         uses: actions/upload-artifact@v4
