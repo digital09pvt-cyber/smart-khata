@@ -1,0 +1,1603 @@
+<!DOCTYPE html>
+<html lang="hi" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>दैनिक आय-व्यय प्रबंधक | Smart Khata</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Google Fonts: Inter & Noto Sans Devanagari -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Noto Sans Devanagari"', 'Inter', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eff6ff',
+              100: '#dbeafe',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Noto Sans Devanagari', 'Inter', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* Hide scrollbars but keep functionality */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    /* Custom animation */
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .animate-slide-up {
+      animation: slideUp 0.25s ease-out forwards;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-full transition-colors duration-200">
+
+  <!-- Main Container (App wrapper, max-w-lg for true mobile-app feel) -->
+  <div class="max-w-md mx-auto min-h-screen bg-white dark:bg-slate-900 shadow-xl flex flex-col relative pb-24">
+    
+    <!-- Top Sticky Header -->
+    <header class="sticky top-0 z-30 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-100 dark:border-slate-800 px-4 py-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 text-white flex items-center justify-center shadow-md shadow-blue-500/20">
+            <i class="fa-solid fa-wallet text-base"></i>
+          </div>
+          <div>
+            <h1 class="text-base font-bold tracking-tight text-slate-900 dark:text-white leading-tight" id="appTitle">दैनिक आय-व्यय प्रबंधक</h1>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400 font-medium" id="appSubtitle">सुरक्षित एवं सरल डिजिटल बहीखाता</p>
+          </div>
+        </div>
+
+        <!-- Header Actions: Categories, Dark Mode, Backup -->
+        <div class="flex items-center space-x-1">
+          <button id="themeToggleBtn" aria-label="थीम बदलें" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <i class="fa-solid fa-moon dark:hidden text-sm"></i>
+            <i class="fa-solid fa-sun hidden dark:block text-amber-400 text-sm"></i>
+          </button>
+          
+          <button id="langToggleBtn" class="px-2 py-1 text-xs font-semibold rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition text-slate-700 dark:text-slate-200">
+            EN
+          </button>
+
+          <button id="openSettingsModalBtn" aria-label="सेटिंग्स व बैकअप" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <i class="fa-solid fa-gear text-sm"></i>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Scrollable Content -->
+    <main class="flex-1 px-4 py-3 space-y-4">
+
+      <!-- 3 Summary Cards (आय, व्यय, शेष राशि) -->
+      <div class="grid grid-cols-3 gap-2">
+        <!-- Total Income -->
+        <div class="bg-emerald-50/80 dark:bg-emerald-950/30 border border-emerald-200/70 dark:border-emerald-800/50 rounded-2xl p-2.5 text-center shadow-sm">
+          <span class="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 block mb-0.5" id="lblIncome">कुल आय</span>
+          <p class="text-base sm:text-lg font-bold text-emerald-600 dark:text-emerald-400 leading-none truncate" id="totalIncomeDisplay">₹0</p>
+        </div>
+
+        <!-- Total Expense -->
+        <div class="bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200/70 dark:border-rose-800/50 rounded-2xl p-2.5 text-center shadow-sm">
+          <span class="text-[11px] font-medium text-rose-700 dark:text-rose-400 block mb-0.5" id="lblExpense">कुल व्यय</span>
+          <p class="text-base sm:text-lg font-bold text-rose-600 dark:text-rose-400 leading-none truncate" id="totalExpenseDisplay">₹0</p>
+        </div>
+
+        <!-- Net Balance -->
+        <div class="bg-sky-50/80 dark:bg-sky-950/30 border border-sky-200/70 dark:border-sky-800/50 rounded-2xl p-2.5 text-center shadow-sm">
+          <span class="text-[11px] font-medium text-sky-700 dark:text-sky-400 block mb-0.5" id="lblBalance">शेष राशि</span>
+          <p class="text-base sm:text-lg font-bold text-sky-600 dark:text-sky-400 leading-none truncate" id="netBalanceDisplay">₹0</p>
+        </div>
+      </div>
+
+      <!-- Monthly Budget Tracker Card (Advanced Extra Feature) -->
+      <div id="budgetCard" class="bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 rounded-2xl p-3 shadow-sm">
+        <div class="flex items-center justify-between mb-1.5">
+          <div class="flex items-center space-x-1.5">
+            <span class="text-xs font-semibold text-slate-700 dark:text-slate-300" id="lblMonthlyBudget">मासिक बजट लक्ष्य</span>
+            <button id="editBudgetBtn" class="text-blue-500 hover:text-blue-700 text-xs font-medium" title="बजट सेट करें">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+          </div>
+          <span class="text-xs font-semibold text-slate-600 dark:text-slate-400" id="budgetAmountLabel">लक्ष्य: ₹0</span>
+        </div>
+        <div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
+          <div id="budgetProgressBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+        </div>
+        <div class="flex justify-between items-center text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+          <span id="budgetSpentPercent">0% खर्च हुआ</span>
+          <span id="budgetRemainingLabel">शेष: ₹0</span>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs: [नया लेनदेन], [इतिहास / बही], [विश्लेषण] -->
+      <div class="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs font-semibold">
+        <button id="tabFormBtn" class="flex-1 py-2 rounded-lg text-center transition bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm flex items-center justify-center space-x-1">
+          <i class="fa-solid fa-plus-circle text-xs"></i>
+          <span id="tabFormText">प्रविष्टि फॉर्म</span>
+        </button>
+        <button id="tabHistoryBtn" class="flex-1 py-2 rounded-lg text-center transition text-slate-600 dark:text-slate-300 hover:text-slate-900 flex items-center justify-center space-x-1">
+          <i class="fa-solid fa-receipt text-xs"></i>
+          <span id="tabHistoryText">लेनदेन इतिहास</span>
+        </button>
+        <button id="tabAnalyticsBtn" class="flex-1 py-2 rounded-lg text-center transition text-slate-600 dark:text-slate-300 hover:text-slate-900 flex items-center justify-center space-x-1">
+          <i class="fa-solid fa-chart-pie text-xs"></i>
+          <span id="tabAnalyticsText">ग्राफ व रिपोर्ट</span>
+        </button>
+      </div>
+
+      <!-- VIEW 1: TRANSACTION ENTRY FORM -->
+      <section id="viewForm" class="space-y-4">
+        
+        <!-- Transaction Type & Payment Mode Selection -->
+        <div class="grid grid-cols-2 gap-3">
+          <!-- Type (खर्च vs आय) -->
+          <div>
+            <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1" id="lblTxnType">लेनदेन का प्रकार</label>
+            <div class="grid grid-cols-2 gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+              <button type="button" id="typeExpenseBtn" class="py-2 text-xs font-bold rounded-lg transition text-white bg-rose-600 shadow-sm flex items-center justify-center space-x-1">
+                <span>व्यय (-)</span>
+              </button>
+              <button type="button" id="typeIncomeBtn" class="py-2 text-xs font-bold rounded-lg transition text-slate-600 dark:text-slate-300 hover:text-slate-900 flex items-center justify-center space-x-1">
+                <span>आय (+)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Payment Mode -->
+          <div>
+            <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1" id="lblPayMode">भुगतान माध्यम</label>
+            <div class="relative">
+              <select id="paymentModeSelect" class="w-full appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="Cash">नकद (Cash)</option>
+                <option value="UPI">UPI (GPay / PhonePe / Paytm)</option>
+                <option value="Bank">बैंक खाता (Bank Account)</option>
+                <option value="Card">क्रेडिट/डेबिट कार्ड</option>
+                <option value="Other">अन्य (Other)</option>
+              </select>
+              <i class="fa-solid fa-chevron-down absolute right-3 top-3 text-[10px] text-slate-400 pointer-events-none"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Amount (₹) & Quick Add -->
+        <div class="space-y-2">
+          <label class="block text-xs font-medium text-slate-600 dark:text-slate-400" id="lblAmount">राशि (₹)</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-lg font-bold text-slate-400">₹</span>
+            <input type="number" id="amountInput" placeholder="0" min="0" step="any" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-12 py-2.5 text-lg font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+            <button type="button" id="clearAmountBtn" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs px-1">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+
+          <!-- Quick Add Chips: +20, +50, +100, +500, +1000, +2000 -->
+          <div>
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-[11px] font-medium text-slate-500 dark:text-slate-400" id="lblQuickAdd">त्वरित राशि जोड़ें:</span>
+            </div>
+            <div class="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+              <button type="button" class="quick-add-btn bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 transition border border-slate-200/60 dark:border-slate-700" data-amt="20">+₹20</button>
+              <button type="button" class="quick-add-btn bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 transition border border-slate-200/60 dark:border-slate-700" data-amt="50">+₹50</button>
+              <button type="button" class="quick-add-btn bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 transition border border-slate-200/60 dark:border-slate-700" data-amt="100">+₹100</button>
+              <button type="button" class="quick-add-btn bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 transition border border-slate-200/60 dark:border-slate-700" data-amt="500">+₹500</button>
+              <button type="button" class="quick-add-btn bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 transition border border-slate-200/60 dark:border-slate-700 hidden sm:block" data-amt="1000">+₹1K</button>
+              <button type="button" class="quick-add-btn bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700 py-1.5 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-300 transition border border-slate-200/60 dark:border-slate-700 hidden sm:block" data-amt="2000">+₹2K</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Category Selector (NO PRE-ADDED CATEGORIES BY DEFAULT AS REQUESTED) -->
+        <div class="space-y-1.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-medium text-slate-600 dark:text-slate-400" id="lblCategory">श्रेणी (Category)</label>
+            <button type="button" id="openAddCategoryModalBtn" class="text-xs font-semibold text-blue-600 hover:text-blue-700 dark:text-blue-400 flex items-center space-x-1">
+              <i class="fa-solid fa-plus text-[10px]"></i>
+              <span id="lblAddNewCatBtn">नई श्रेणी बनाएं</span>
+            </button>
+          </div>
+
+          <!-- Dynamic Dropdown -->
+          <div class="relative">
+            <select id="categorySelect" class="w-full appearance-none bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <!-- Rendered via JS - Starts completely empty as per user rule -->
+            </select>
+            <i class="fa-solid fa-chevron-down absolute right-3 top-3.5 text-[10px] text-slate-400 pointer-events-none"></i>
+          </div>
+
+          <!-- Empty Category Prompt Banner (Shown when user has 0 categories) -->
+          <div id="noCategoryAlert" class="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 rounded-xl p-2.5 flex items-start space-x-2 text-xs text-amber-800 dark:text-amber-300">
+            <i class="fa-solid fa-circle-info text-amber-500 mt-0.5"></i>
+            <div class="flex-1">
+              <p class="font-medium">आपकी कोई पूर्व-निर्धारित श्रेणी नहीं है।</p>
+              <p class="text-[11px] text-amber-700 dark:text-amber-400">अपनी पहली श्रेणी जोड़ने के लिए ऊपर दिए गए <strong>"नई श्रेणी बनाएं"</strong> पर क्लिक करें।</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Date & Description Fields -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <!-- Date Picker -->
+          <div>
+            <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1" id="lblDate">दिनांक (Date)</label>
+            <input type="date" id="dateInput" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <!-- Description / Note -->
+          <div>
+            <label class="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1" id="lblNote">विवरण (नोट)</label>
+            <input type="text" id="noteInput" placeholder="विवरण लिखें (वैकल्पिक)" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+        </div>
+
+        <!-- Primary Action: Save Transaction -->
+        <button type="button" id="saveTransactionBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-blue-500/25 transition duration-150 active:scale-[0.99] flex items-center justify-center space-x-2">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span id="btnSaveText">प्रविष्टि जोड़ें (Save)</span>
+        </button>
+
+        <!-- Quick Share & Download Actions -->
+        <div class="grid grid-cols-2 gap-2 pt-1">
+          <button type="button" id="shareWhatsAppBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center space-x-1.5 shadow-sm">
+            <i class="fa-brands fa-whatsapp text-sm"></i>
+            <span id="btnWaText">WhatsApp रिपोर्ट</span>
+          </button>
+          
+          <button type="button" id="downloadExcelBtn" class="bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 dark:hover:bg-slate-600 text-white text-xs font-bold py-2.5 px-3 rounded-xl transition flex items-center justify-center space-x-1.5 shadow-sm">
+            <i class="fa-solid fa-file-excel text-emerald-400 text-sm"></i>
+            <span id="btnExcelText">Excel (CSV) डाउनलोड</span>
+          </button>
+        </div>
+
+        <!-- Quick Summary Chart Preview (Under form like screenshot) -->
+        <div class="pt-3 border-t border-slate-100 dark:border-slate-800">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300" id="lblChartHead">खर्च का विश्लेषणात्मक ग्राफ</h3>
+            <span class="text-[11px] text-slate-400" id="chartPeriodLabel">इस महीने</span>
+          </div>
+          <div class="bg-slate-50 dark:bg-slate-800/40 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 text-center">
+            <div id="chartContainer" class="relative h-56 flex items-center justify-center">
+              <canvas id="expenseDoughnutChart"></canvas>
+              <div id="chartEmptyMessage" class="hidden text-center p-4">
+                <i class="fa-solid fa-chart-pie text-3xl text-slate-300 dark:text-slate-600 mb-2"></i>
+                <p class="text-xs text-slate-500 dark:text-slate-400">अभी कोई खर्च दर्ज नहीं है।</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- VIEW 2: TRANSACTION HISTORY & LEDGER -->
+      <section id="viewHistory" class="hidden space-y-3">
+        <!-- Search & Filter Controls -->
+        <div class="space-y-2">
+          <!-- Search Box -->
+          <div class="relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-xs"></i>
+            <input type="text" id="searchTxnInput" placeholder="खोजें (नोट, श्रेणी, भुगतान माध्यम...)" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-3 py-2 text-xs font-medium text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <!-- Time & Type Filter Pills -->
+          <div class="flex items-center justify-between space-x-1 overflow-x-auto no-scrollbar py-1">
+            <div class="flex space-x-1 text-[11px]">
+              <button class="filter-time-btn px-2.5 py-1 rounded-lg font-semibold bg-blue-600 text-white" data-time="all">सभी</button>
+              <button class="filter-time-btn px-2.5 py-1 rounded-lg font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" data-time="today">आज</button>
+              <button class="filter-time-btn px-2.5 py-1 rounded-lg font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300" data-time="month">इस माह</button>
+            </div>
+
+            <div class="flex space-x-1 text-[11px]">
+              <button class="filter-type-btn px-2 py-1 rounded-lg font-semibold bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white" data-type="all">कुल</button>
+              <button class="filter-type-btn px-2 py-1 rounded-lg font-semibold bg-slate-100 dark:bg-slate-800 text-rose-600 dark:text-rose-400" data-type="expense">व्यय</button>
+              <button class="filter-type-btn px-2 py-1 rounded-lg font-semibold bg-slate-100 dark:bg-slate-800 text-emerald-600 dark:text-emerald-400" data-type="income">आय</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Transactions List -->
+        <div id="transactionsList" class="space-y-2">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyTxnState" class="hidden text-center py-12 px-4">
+          <div class="w-14 h-14 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-3 text-slate-400">
+            <i class="fa-solid fa-receipt text-xl"></i>
+          </div>
+          <h4 class="text-sm font-bold text-slate-700 dark:text-slate-300">कोई प्रविष्टि नहीं मिली</h4>
+          <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">पहला लेनदेन जोड़ने के लिए "प्रविष्टि फॉर्म" टैब पर जाएं।</p>
+        </div>
+      </section>
+
+      <!-- VIEW 3: ANALYTICS & DETAILED REPORTS -->
+      <section id="viewAnalytics" class="hidden space-y-4">
+        <!-- Monthly Comparison Bar Chart -->
+        <div class="bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 rounded-2xl p-3.5 shadow-sm">
+          <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">आय बनाम व्यय तुलना</h3>
+          <div class="relative h-60">
+            <canvas id="barCompareChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Category Wise Expense Breakdown Table -->
+        <div class="bg-white dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700 rounded-2xl p-3.5 shadow-sm space-y-2">
+          <h3 class="text-xs font-bold text-slate-700 dark:text-slate-300">श्रेणी अनुसार कुल व्यय</h3>
+          <div id="categoryBreakdownList" class="space-y-1.5 text-xs">
+            <!-- Dynamic -->
+          </div>
+        </div>
+
+        <!-- Export & Backup Options -->
+        <div class="bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200/60 dark:border-blue-800/40 rounded-2xl p-3 text-xs space-y-2">
+          <div class="flex items-center space-x-2 text-blue-700 dark:text-blue-300 font-bold">
+            <i class="fa-solid fa-shield-halved"></i>
+            <span>100% सुरक्षित और ऑफलाइन</span>
+          </div>
+          <p class="text-[11px] text-slate-600 dark:text-slate-400">आपका सारा डेटा केवल आपके फोन में सुरक्षित रहता है। कभी भी बैकअप लें या एक्सेल डाउनलोड करें।</p>
+          <div class="flex space-x-2 pt-1">
+            <button id="analyticsWaShareBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center space-x-1">
+              <i class="fa-brands fa-whatsapp"></i>
+              <span>WhatsApp पर भेजें</span>
+            </button>
+            <button id="analyticsCsvBtn" class="flex-1 bg-slate-800 hover:bg-slate-900 dark:bg-slate-700 text-white py-2 px-3 rounded-xl font-bold text-xs flex items-center justify-center space-x-1">
+              <i class="fa-solid fa-download"></i>
+              <span>CSV रिपोर्ट</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Bottom Navigation Bar (App Dock) -->
+    <nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-t border-slate-200 dark:border-slate-800 px-6 py-2 flex items-center justify-around z-30">
+      <button id="navHomeBtn" class="flex flex-col items-center text-blue-600 dark:text-blue-400 font-bold text-[11px]">
+        <i class="fa-solid fa-house text-base mb-0.5"></i>
+        <span>होम</span>
+      </button>
+
+      <button id="navCatManagerBtn" class="flex flex-col items-center text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium text-[11px]">
+        <i class="fa-solid fa-tags text-base mb-0.5"></i>
+        <span>श्रेणियां</span>
+      </button>
+
+      <button id="navHistoryBtn" class="flex flex-col items-center text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium text-[11px]">
+        <i class="fa-solid fa-list-check text-base mb-0.5"></i>
+        <span>बहीखाता</span>
+      </button>
+
+      <button id="navSettingsBtn" class="flex flex-col items-center text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white font-medium text-[11px]">
+        <i class="fa-solid fa-sliders text-base mb-0.5"></i>
+        <span>सेटिंग्स</span>
+      </button>
+    </nav>
+
+    <!-- MODAL 1: ADD / EDIT CUSTOM CATEGORY -->
+    <div id="categoryModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+      <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl space-y-4 animate-slide-up border border-slate-200 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <div class="flex items-center space-x-2">
+            <div class="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xs">
+              <i class="fa-solid fa-tag"></i>
+            </div>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white" id="catModalTitle">नई श्रेणी जोड़ें</h3>
+          </div>
+          <button id="closeCatModalBtn" class="w-7 h-7 rounded-full text-slate-400 hover:text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+
+        <!-- Category Form -->
+        <div class="space-y-3">
+          <!-- Name Input -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">श्रेणी का नाम *</label>
+            <input type="text" id="catNameInput" placeholder="जैसे: किराना, पेट्रोल, किराया, सैलरी..." class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-xs font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+          </div>
+
+          <!-- Type: Expense / Income / Both -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">यह श्रेणी किसके लिए है?</label>
+            <div class="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl text-xs">
+              <button type="button" class="cat-type-select-btn py-1.5 rounded-lg font-bold bg-white dark:bg-slate-700 text-rose-600 shadow-xs" data-cattype="expense">व्यय (खर्च)</button>
+              <button type="button" class="cat-type-select-btn py-1.5 rounded-lg font-bold text-slate-600 dark:text-slate-300" data-cattype="income">आय (कमाई)</button>
+              <button type="button" class="cat-type-select-btn py-1.5 rounded-lg font-bold text-slate-600 dark:text-slate-300" data-cattype="both">दोनों</button>
+            </div>
+          </div>
+
+          <!-- Icon / Emoji Picker -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">आइकन चुनें</label>
+            <div class="grid grid-cols-7 gap-1.5 p-2 bg-slate-50 dark:bg-slate-800/50 rounded-xl max-h-32 overflow-y-auto no-scrollbar" id="emojiPicker">
+              <button type="button" class="emoji-opt w-9 h-9 text-base rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition border border-transparent selected-emoji bg-blue-100 dark:bg-blue-900/60 border-blue-500" data-emoji="🛍️">🛍️</button>
+              <button type="button" class="emoji-opt w-9 h-9 text-base rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition border border-transparent" data-emoji="⛽">⛽</button>
+              <button type="button" class="emoji-opt w-9 h-9 text-base rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition border border-transparent" data-emoji="🏠">🏠</button>
+              <button type="button" class="emoji-opt w-9 h-9 text-base rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition border border-transparent" data-emoji="💊">💊</button>
+              <button type="button" class="emoji-opt w-9 h-9 text-base rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition border border-transparent" data-emoji="💼">💼</button>
+              <button type="button" class="emoji-opt w-9 h-9 text-base rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition border border-transparent" data-emoji="💰">💰</button>
+              <button type="button" class="emoji-opt w-9 h-9 text-base rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition border border-transparent" data-emoji="🚗">🚗</button>
+              <button type="button" class="emoji-opt w-9 h-9 text-base rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition border border-transparent" data-emoji="📱">📱</button>
+              <button type="button" class="emoji-opt w-9 h-9 text-base rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition border border-transparent" data-emoji="⚡">⚡</button>
+              <button type="button" class="emoji-opt w-9 h-9 text-base rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition border border-transparent" data-emoji="🍔">🍔</button>
+              <button type="button" class="emoji-opt w-9 h-9 text-base rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition border border-transparent" data-emoji="🎓">🎓</button>
+              <button type="button" class="emoji-opt w-9 h-9 text-base rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition border border-transparent" data-emoji="🛒">🛒</button>
+              <button type="button" class="emoji-opt w-9 h-9 text-base rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition border border-transparent" data-emoji="🎁">🎁</button>
+              <button type="button" class="emoji-opt w-9 h-9 text-base rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center transition border border-transparent" data-emoji="✈️">✈️</button>
+            </div>
+          </div>
+
+          <!-- Color theme -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">रंग चुनें</label>
+            <div class="flex items-center space-x-2" id="colorPicker">
+              <button type="button" class="color-opt w-7 h-7 rounded-full bg-blue-500 ring-2 ring-offset-2 ring-blue-500" data-color="#3b82f6"></button>
+              <button type="button" class="color-opt w-7 h-7 rounded-full bg-emerald-500" data-color="#10b981"></button>
+              <button type="button" class="color-opt w-7 h-7 rounded-full bg-amber-500" data-color="#f59e0b"></button>
+              <button type="button" class="color-opt w-7 h-7 rounded-full bg-rose-500" data-color="#f43f5e"></button>
+              <button type="button" class="color-opt w-7 h-7 rounded-full bg-purple-500" data-color="#8b5cf6"></button>
+              <button type="button" class="color-opt w-7 h-7 rounded-full bg-cyan-500" data-color="#06b6d4"></button>
+              <button type="button" class="color-opt w-7 h-7 rounded-full bg-slate-500" data-color="#64748b"></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save Category Button -->
+        <button type="button" id="submitCategoryBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-xl shadow-md transition text-xs">
+          श्रेणी सुरक्षित करें (Save)
+        </button>
+      </div>
+    </div>
+
+    <!-- MODAL 2: CATEGORY MANAGER (VIEW / DELETE EXISTING CUSTOM CATEGORIES) -->
+    <div id="categoryManagerModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+      <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl space-y-4 animate-slide-up border border-slate-200 dark:border-slate-800 max-h-[85vh] flex flex-col">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <h3 class="text-sm font-bold text-slate-900 dark:text-white">मेरी श्रेणियां (Category Manager)</h3>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">अपनी सुविधानुसार श्रेणियां जोड़ें या हटाएं</p>
+          </div>
+          <button id="closeCatManagerBtn" class="w-7 h-7 rounded-full text-slate-400 hover:text-slate-600 flex items-center justify-center">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+
+        <button type="button" id="catMgrAddBtn" class="w-full py-2.5 bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 font-bold rounded-xl border border-blue-200 dark:border-blue-800 text-xs flex items-center justify-center space-x-1.5">
+          <i class="fa-solid fa-plus text-xs"></i>
+          <span>नई श्रेणी जोड़ें</span>
+        </button>
+
+        <div id="catManagerList" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs">
+          <!-- Dynamic -->
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 3: MONTHLY BUDGET SETTINGS -->
+    <div id="budgetModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 hidden">
+      <div class="bg-white dark:bg-slate-900 w-full max-w-sm rounded-2xl p-5 shadow-2xl space-y-4 border border-slate-200 dark:border-slate-800 animate-slide-up">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white">मासिक खर्च बजट लक्ष्य</h3>
+          <button id="closeBudgetModalBtn" class="w-7 h-7 rounded-full text-slate-400 hover:text-slate-600 flex items-center justify-center">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+        <p class="text-xs text-slate-500 dark:text-slate-400">एक महीने में आप अधिकतम कितना खर्च करना चाहते हैं?</p>
+        <div class="relative">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-slate-400">₹</span>
+          <input type="number" id="budgetLimitInput" placeholder="उदा. 15000" class="w-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-8 pr-3 py-2 text-base font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="flex space-x-2">
+          <button type="button" id="clearBudgetBtn" class="flex-1 py-2 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 dark:bg-rose-950/40">हटाएं</button>
+          <button type="button" id="saveBudgetBtn" class="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700">सुरक्षित करें</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 4: SETTINGS & BACKUP / RESTORE -->
+    <div id="settingsModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 hidden">
+      <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-t-3xl sm:rounded-2xl p-5 shadow-2xl space-y-4 border border-slate-200 dark:border-slate-800 animate-slide-up">
+        <div class="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
+          <h3 class="text-sm font-bold text-slate-900 dark:text-white">ऐप सेटिंग्स और बैकअप</h3>
+          <button id="closeSettingsModalBtn" class="w-7 h-7 rounded-full text-slate-400 hover:text-slate-600 flex items-center justify-center">
+            <i class="fa-solid fa-xmark text-sm"></i>
+          </button>
+        </div>
+
+        <div class="space-y-3 text-xs">
+          <!-- Backup -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-2">
+            <h4 class="font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
+              <i class="fa-solid fa-cloud-arrow-down text-blue-500"></i>
+              <span>डेटा बैकअप (Export JSON)</span>
+            </h4>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">अपने सभी खर्च और श्रेणियों की एक बैकअप फाइल अपने फोन में डाउनलोड करें।</p>
+            <button type="button" id="exportBackupBtn" class="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs flex items-center justify-center space-x-1">
+              <i class="fa-solid fa-download"></i>
+              <span>बैकअप फाइल डाउनलोड करें</span>
+            </button>
+          </div>
+
+          <!-- Restore -->
+          <div class="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl space-y-2">
+            <h4 class="font-bold text-slate-800 dark:text-slate-200 flex items-center space-x-1.5">
+              <i class="fa-solid fa-cloud-arrow-up text-emerald-500"></i>
+              <span>बैकअप रीस्टोर करें (Import JSON)</span>
+            </h4>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">पुरानी बैकअप फाइल से डेटा वापस लाएं।</p>
+            <label class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center space-x-1 cursor-pointer text-center">
+              <i class="fa-solid fa-folder-open"></i>
+              <span>बैकअप फाइल चुनें</span>
+              <input type="file" id="importBackupFile" accept=".json" class="hidden">
+            </label>
+          </div>
+
+          <!-- Reset All Data -->
+          <div class="p-3 bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900 rounded-xl space-y-1.5">
+            <h4 class="font-bold text-rose-600 flex items-center space-x-1.5">
+              <i class="fa-solid fa-trash-can"></i>
+              <span>संपूर्ण डेटा रीसेट</span>
+            </h4>
+            <p class="text-[11px] text-slate-500 dark:text-slate-400">सभी प्रविष्टियां और श्रेणियां मिटाकर नए सिरे से शुरू करें।</p>
+            <button type="button" id="resetAllDataBtn" class="py-1.5 px-3 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-bold text-[11px]">
+              पूरा डेटा मिटाएं
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast" class="fixed top-5 left-1/2 -translate-x-1/2 z-50 max-w-xs bg-slate-900 dark:bg-white text-white dark:text-slate-900 px-4 py-2.5 rounded-xl shadow-xl text-xs font-semibold flex items-center space-x-2 transition-all duration-300 opacity-0 pointer-events-none -translate-y-4">
+      <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400 dark:text-emerald-600"></i>
+      <span id="toastMsg">प्रविष्टि सुरक्षित हो गई!</span>
+    </div>
+
+  </div>
+
+  <!-- APPLICATION LOGIC SCRIPT -->
+  <script>
+    (function () {
+      // --- APP STATE ---
+      // Crucial constraint: NO pre-added categories! Starts 100% empty unless user creates them.
+      let state = {
+        lang: 'hi', // 'hi' or 'en'
+        theme: 'light',
+        categories: [],
+        transactions: [],
+        budget: 0,
+        activeTab: 'form', // 'form', 'history', 'analytics'
+        txnType: 'expense', // 'expense' or 'income'
+        filterTime: 'all',
+        filterType: 'all',
+        searchTerm: '',
+        selectedCatEmoji: '🛍️',
+        selectedCatColor: '#3b82f6',
+        selectedCatType: 'expense'
+      };
+
+      // Load state safely from localStorage
+      function loadState() {
+        try {
+          const savedCategories = localStorage.getItem('khata_categories');
+          if (savedCategories) {
+            state.categories = JSON.parse(savedCategories);
+          } else {
+            // STRICT RULE: No pre-added categories!
+            state.categories = [];
+          }
+
+          const savedTxns = localStorage.getItem('khata_transactions');
+          if (savedTxns) {
+            state.transactions = JSON.parse(savedTxns);
+          }
+
+          const savedBudget = localStorage.getItem('khata_budget');
+          if (savedBudget) {
+            state.budget = parseFloat(savedBudget) || 0;
+          }
+
+          const savedTheme = localStorage.getItem('khata_theme');
+          if (savedTheme) {
+            state.theme = savedTheme;
+          }
+
+          const savedLang = localStorage.getItem('khata_lang');
+          if (savedLang) {
+            state.lang = savedLang;
+          }
+        } catch (e) {
+          console.warn('Storage read error:', e);
+        }
+      }
+
+      function saveCategories() {
+        try {
+          localStorage.setItem('khata_categories', JSON.stringify(state.categories));
+        } catch (e) {}
+      }
+
+      function saveTransactions() {
+        try {
+          localStorage.setItem('khata_transactions', JSON.stringify(state.transactions));
+        } catch (e) {}
+      }
+
+      function saveBudget() {
+        try {
+          localStorage.setItem('khata_budget', state.budget.toString());
+        } catch (e) {}
+      }
+
+      // --- TOAST HELPER ---
+      function showToast(msg, isError = false) {
+        const toast = document.getElementById('toast');
+        const toastMsg = document.getElementById('toastMsg');
+        const toastIcon = document.getElementById('toastIcon');
+        toastMsg.textContent = msg;
+        if (isError) {
+          toastIcon.className = 'fa-solid fa-circle-exclamation text-rose-500';
+        } else {
+          toastIcon.className = 'fa-solid fa-circle-check text-emerald-400 dark:text-emerald-600';
+        }
+        toast.classList.remove('opacity-0', 'pointer-events-none', '-translate-y-4');
+        toast.classList.add('opacity-100', 'translate-y-0');
+        setTimeout(() => {
+          toast.classList.remove('opacity-100', 'translate-y-0');
+          toast.classList.add('opacity-0', 'pointer-events-none', '-translate-y-4');
+        }, 2200);
+      }
+
+      // --- THEME & LANGUAGE ---
+      function applyTheme() {
+        if (state.theme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+        try { localStorage.setItem('khata_theme', state.theme); } catch (e) {}
+      }
+
+      function toggleTheme() {
+        state.theme = state.theme === 'dark' ? 'light' : 'dark';
+        applyTheme();
+        renderCharts();
+      }
+
+      // --- CHARTS INSTANCES ---
+      let doughnutChartInstance = null;
+      let barChartInstance = null;
+
+      // --- RENDER CATEGORY DROPDOWN ---
+      function renderCategorySelect() {
+        const select = document.getElementById('categorySelect');
+        const noCatAlert = document.getElementById('noCategoryAlert');
+        select.innerHTML = '';
+
+        // Filter categories according to current transaction type ('expense' vs 'income' vs 'both')
+        const filtered = state.categories.filter(c => c.type === 'both' || c.type === state.txnType);
+
+        if (state.categories.length === 0) {
+          noCatAlert.classList.remove('hidden');
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.disabled = true;
+          opt.selected = true;
+          opt.textContent = state.lang === 'hi' 
+            ? '⚠️ कोई श्रेणी नहीं (ऊपर "नई श्रेणी बनाएं" दबाएं)' 
+            : '⚠️ No Categories (Click "Add Category" above)';
+          select.appendChild(opt);
+        } else if (filtered.length === 0) {
+          noCatAlert.classList.add('hidden');
+          const opt = document.createElement('option');
+          opt.value = '';
+          opt.disabled = true;
+          opt.selected = true;
+          opt.textContent = state.lang === 'hi' 
+            ? `इस प्रकार (${state.txnType === 'expense' ? 'व्यय' : 'आय'}) के लिए श्रेणी जोड़ें` 
+            : `Add category for ${state.txnType}`;
+          select.appendChild(opt);
+        } else {
+          noCatAlert.classList.add('hidden');
+          filtered.forEach(cat => {
+            const opt = document.createElement('option');
+            opt.value = cat.id;
+            opt.textContent = `${cat.emoji} ${cat.name}`;
+            select.appendChild(opt);
+          });
+        }
+      }
+
+      // --- RENDER TOTALS & BUDGET ---
+      function calculateTotals() {
+        let inc = 0;
+        let exp = 0;
+
+        const now = new Date();
+        const currentMonth = now.getMonth();
+        const currentYear = now.getFullYear();
+
+        let thisMonthExp = 0;
+
+        state.transactions.forEach(t => {
+          const amt = parseFloat(t.amount) || 0;
+          if (t.type === 'income') {
+            inc += amt;
+          } else {
+            exp += amt;
+          }
+
+          if (t.date) {
+            const d = new Date(t.date);
+            if (d.getMonth() === currentMonth && d.getFullYear() === currentYear && t.type === 'expense') {
+              thisMonthExp += amt;
+            }
+          }
+        });
+
+        const bal = inc - exp;
+
+        document.getElementById('totalIncomeDisplay').textContent = `₹${inc.toLocaleString('en-IN')}`;
+        document.getElementById('totalExpenseDisplay').textContent = `₹${exp.toLocaleString('en-IN')}`;
+        document.getElementById('netBalanceDisplay').textContent = `₹${bal.toLocaleString('en-IN')}`;
+
+        // Budget calculations
+        const budgetCard = document.getElementById('budgetCard');
+        const budgetAmountLabel = document.getElementById('budgetAmountLabel');
+        const budgetProgressBar = document.getElementById('budgetProgressBar');
+        const budgetSpentPercent = document.getElementById('budgetSpentPercent');
+        const budgetRemainingLabel = document.getElementById('budgetRemainingLabel');
+
+        if (state.budget > 0) {
+          budgetAmountLabel.textContent = `लक्ष्य: ₹${state.budget.toLocaleString('en-IN')}`;
+          const pct = Math.min(Math.round((thisMonthExp / state.budget) * 100), 100);
+          budgetProgressBar.style.width = `${pct}%`;
+          
+          if (pct >= 100) {
+            budgetProgressBar.className = 'bg-rose-600 h-2.5 rounded-full transition-all duration-500';
+          } else if (pct >= 80) {
+            budgetProgressBar.className = 'bg-amber-500 h-2.5 rounded-full transition-all duration-500';
+          } else {
+            budgetProgressBar.className = 'bg-blue-600 h-2.5 rounded-full transition-all duration-500';
+          }
+
+          budgetSpentPercent.textContent = `${pct}% खर्च (₹${thisMonthExp.toLocaleString('en-IN')})`;
+          const rem = state.budget - thisMonthExp;
+          budgetRemainingLabel.textContent = rem >= 0 ? `शेष: ₹${rem.toLocaleString('en-IN')}` : `अधिक खर्च: ₹${Math.abs(rem).toLocaleString('en-IN')}`;
+        } else {
+          budgetAmountLabel.textContent = 'सेट नहीं है (क्लिक करें)';
+          budgetProgressBar.style.width = '0%';
+          budgetSpentPercent.textContent = `इस माह खर्च: ₹${thisMonthExp.toLocaleString('en-IN')}`;
+          budgetRemainingLabel.textContent = 'कोई सीमा तय नहीं';
+        }
+      }
+
+      // --- RENDER TRANSACTIONS LIST ---
+      function renderTransactions() {
+        const listContainer = document.getElementById('transactionsList');
+        const emptyState = document.getElementById('emptyTxnState');
+        listContainer.innerHTML = '';
+
+        let filtered = [...state.transactions];
+
+        // Filter by Type
+        if (state.filterType !== 'all') {
+          filtered = filtered.filter(t => t.type === state.filterType);
+        }
+
+        // Filter by Time
+        const todayStr = new Date().toISOString().split('T')[0];
+        const currentMonth = new Date().getMonth();
+        const currentYear = new Date().getFullYear();
+
+        if (state.filterTime === 'today') {
+          filtered = filtered.filter(t => t.date === todayStr);
+        } else if (state.filterTime === 'month') {
+          filtered = filtered.filter(t => {
+            if (!t.date) return false;
+            const d = new Date(t.date);
+            return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+          });
+        }
+
+        // Search Term
+        if (state.searchTerm.trim() !== '') {
+          const q = state.searchTerm.toLowerCase().trim();
+          filtered = filtered.filter(t => {
+            const cat = state.categories.find(c => c.id === t.categoryId);
+            const catName = cat ? cat.name.toLowerCase() : '';
+            const note = (t.note || '').toLowerCase();
+            const mode = (t.mode || '').toLowerCase();
+            return catName.includes(q) || note.includes(q) || mode.includes(q);
+          });
+        }
+
+        if (filtered.length === 0) {
+          emptyState.classList.remove('hidden');
+          return;
+        } else {
+          emptyState.classList.add('hidden');
+        }
+
+        // Sort by date descending
+        filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        filtered.forEach(txn => {
+          const cat = state.categories.find(c => c.id === txn.categoryId) || {
+            name: txn.type === 'income' ? 'आय' : 'अन्य खर्च',
+            emoji: txn.type === 'income' ? '💰' : '💸',
+            color: '#64748b'
+          };
+
+          const isExp = txn.type === 'expense';
+          const card = document.createElement('div');
+          card.className = 'bg-white dark:bg-slate-800/90 border border-slate-100 dark:border-slate-800 rounded-xl p-3 flex items-center justify-between shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition';
+
+          card.innerHTML = `
+            <div class="flex items-center space-x-3">
+              <div class="w-10 h-10 rounded-xl flex items-center justify-center text-lg shadow-xs" style="background-color: ${cat.color}20; color: ${cat.color}">
+                <span>${cat.emoji}</span>
+              </div>
+              <div>
+                <div class="flex items-center space-x-1.5">
+                  <span class="text-xs font-bold text-slate-800 dark:text-slate-100">${cat.name}</span>
+                  <span class="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${txn.mode || 'Cash'}</span>
+                </div>
+                <div class="flex items-center space-x-2 text-[11px] text-slate-400 mt-0.5">
+                  <span>${txn.date || todayStr}</span>
+                  ${txn.note ? `<span>•</span> <span class="truncate max-w-[140px] text-slate-500 dark:text-slate-400">${txn.note}</span>` : ''}
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center space-x-2">
+              <span class="text-sm font-bold ${isExp ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}">
+                ${isExp ? '-' : '+'}₹${parseFloat(txn.amount).toLocaleString('en-IN')}
+              </span>
+              <button class="delete-txn-btn text-slate-300 hover:text-rose-500 transition px-1 py-1" data-id="${txn.id}" title="हटाएं">
+                <i class="fa-solid fa-trash-can text-xs pointer-events-none"></i>
+              </button>
+            </div>
+          `;
+
+          listContainer.appendChild(card);
+        });
+
+        // Attach delete events
+        listContainer.querySelectorAll('.delete-txn-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            const id = btn.getAttribute('data-id');
+            deleteTransaction(id);
+          });
+        });
+      }
+
+      function deleteTransaction(id) {
+        state.transactions = state.transactions.filter(t => t.id !== id);
+        saveTransactions();
+        calculateTotals();
+        renderTransactions();
+        renderCharts();
+        showToast('प्रविष्टि हटा दी गई');
+      }
+
+      // --- RENDER CHARTS ---
+      function renderCharts() {
+        const isDark = document.documentElement.classList.contains('dark');
+        const textColor = isDark ? '#cbd5e1' : '#475569';
+
+        // 1. Doughnut Chart: Expense by Category
+        const expTransactions = state.transactions.filter(t => t.type === 'expense');
+        const categoryMap = {};
+
+        expTransactions.forEach(t => {
+          const cat = state.categories.find(c => c.id === t.categoryId);
+          const name = cat ? `${cat.emoji} ${cat.name}` : 'अन्य';
+          categoryMap[name] = (categoryMap[name] || 0) + parseFloat(t.amount);
+        });
+
+        const catNames = Object.keys(categoryMap);
+        const catAmounts = Object.values(categoryMap);
+
+        const doughnutCanvas = document.getElementById('expenseDoughnutChart');
+        const emptyMsg = document.getElementById('chartEmptyMessage');
+
+        if (catNames.length === 0) {
+          doughnutCanvas.classList.add('hidden');
+          emptyMsg.classList.remove('hidden');
+          if (doughnutChartInstance) {
+            doughnutChartInstance.destroy();
+            doughnutChartInstance = null;
+          }
+        } else {
+          doughnutCanvas.classList.remove('hidden');
+          emptyMsg.classList.add('hidden');
+
+          if (doughnutChartInstance) {
+            doughnutChartInstance.destroy();
+          }
+
+          const palette = [
+            '#3b82f6', '#10b981', '#f59e0b', '#f43f5e', '#8b5cf6',
+            '#06b6d4', '#ec4899', '#14b8a6', '#6366f1', '#eab308'
+          ];
+
+          doughnutChartInstance = new Chart(doughnutCanvas, {
+            type: 'doughnut',
+            data: {
+              labels: catNames,
+              datasets: [{
+                data: catAmounts,
+                backgroundColor: palette.slice(0, catNames.length),
+                borderWidth: 2,
+                borderColor: isDark ? '#1e293b' : '#ffffff'
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'bottom',
+                  labels: {
+                    boxWidth: 12,
+                    font: { size: 11 },
+                    color: textColor
+                  }
+                }
+              },
+              cutout: '68%'
+            }
+          });
+        }
+
+        // 2. Bar Chart: Income vs Expense comparison (Analytics View)
+        const barCanvas = document.getElementById('barCompareChart');
+        if (barCanvas) {
+          let totalInc = 0;
+          let totalExp = 0;
+          state.transactions.forEach(t => {
+            if (t.type === 'income') totalInc += parseFloat(t.amount);
+            else totalExp += parseFloat(t.amount);
+          });
+
+          if (barChartInstance) {
+            barChartInstance.destroy();
+          }
+
+          barChartInstance = new Chart(barCanvas, {
+            type: 'bar',
+            data: {
+              labels: ['कुल आय (Income)', 'कुल व्यय (Expense)'],
+              datasets: [{
+                label: 'राशि (₹)',
+                data: [totalInc, totalExp],
+                backgroundColor: ['#10b981', '#f43f5e'],
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  ticks: { color: textColor, font: { size: 10 } },
+                  grid: { color: isDark ? '#334155' : '#f1f5f9' }
+                },
+                x: {
+                  ticks: { color: textColor, font: { size: 11, weight: 'bold' } },
+                  grid: { display: false }
+                }
+              },
+              plugins: {
+                legend: { display: false }
+              }
+            }
+          });
+        }
+
+        // 3. Category Breakdown List in Analytics Tab
+        const catBreakdown = document.getElementById('categoryBreakdownList');
+        if (catBreakdown) {
+          catBreakdown.innerHTML = '';
+          if (catNames.length === 0) {
+            catBreakdown.innerHTML = '<p class="text-slate-400 text-center py-2">कोई डेटा उपलब्ध नहीं है</p>';
+          } else {
+            let totalExpense = catAmounts.reduce((a, b) => a + b, 0);
+            catNames.forEach((name, idx) => {
+              const amt = catAmounts[idx];
+              const pct = totalExpense > 0 ? Math.round((amt / totalExpense) * 100) : 0;
+              const row = document.createElement('div');
+              row.className = 'flex items-center justify-between p-2 rounded-lg bg-slate-50 dark:bg-slate-700/50';
+              row.innerHTML = `
+                <div class="flex items-center space-x-2">
+                  <span class="font-semibold text-slate-800 dark:text-slate-200">${name}</span>
+                  <span class="text-[10px] text-slate-400">(${pct}%)</span>
+                </div>
+                <span class="font-bold text-rose-600 dark:text-rose-400">₹${amt.toLocaleString('en-IN')}</span>
+              `;
+              catBreakdown.appendChild(row);
+            });
+          }
+        }
+      }
+
+      // --- RENDER CATEGORY MANAGER MODAL LIST ---
+      function renderCategoryManagerList() {
+        const container = document.getElementById('catManagerList');
+        container.innerHTML = '';
+
+        if (state.categories.length === 0) {
+          container.innerHTML = `
+            <div class="text-center py-6 text-slate-400">
+              <i class="fa-solid fa-tags text-2xl mb-1 block"></i>
+              <p class="font-medium text-xs">अभी कोई श्रेणी नहीं बनाई गई है।</p>
+              <p class="text-[11px] text-slate-500">ऊपर 'नई श्रेणी जोड़ें' दबाकर अपनी पसंद की श्रेणियां बनाएं।</p>
+            </div>
+          `;
+          return;
+        }
+
+        state.categories.forEach(cat => {
+          const item = document.createElement('div');
+          item.className = 'flex items-center justify-between p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/60';
+          const typeLabel = cat.type === 'expense' ? 'व्यय' : (cat.type === 'income' ? 'आय' : 'दोनों');
+          
+          item.innerHTML = `
+            <div class="flex items-center space-x-2.5">
+              <div class="w-8 h-8 rounded-lg flex items-center justify-center text-sm" style="background-color: ${cat.color}25; color: ${cat.color}">
+                <span>${cat.emoji}</span>
+              </div>
+              <div>
+                <span class="font-bold text-slate-800 dark:text-slate-200">${cat.name}</span>
+                <span class="text-[10px] ml-1.5 px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300">${typeLabel}</span>
+              </div>
+            </div>
+            <button class="delete-cat-btn text-slate-400 hover:text-rose-500 p-1" data-id="${cat.id}" title="श्रेणी हटाएं">
+              <i class="fa-solid fa-trash-can pointer-events-none"></i>
+            </button>
+          `;
+          container.appendChild(item);
+        });
+
+        container.querySelectorAll('.delete-cat-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            deleteCategory(id);
+          });
+        });
+      }
+
+      function deleteCategory(id) {
+        state.categories = state.categories.filter(c => c.id !== id);
+        saveCategories();
+        renderCategorySelect();
+        renderCategoryManagerList();
+        renderTransactions();
+        renderCharts();
+        showToast('श्रेणी हटा दी गई');
+      }
+
+      // --- WHATSAPP REPORT GENERATION ---
+      function shareWhatsAppReport() {
+        let totalInc = 0;
+        let totalExp = 0;
+        state.transactions.forEach(t => {
+          if (t.type === 'income') totalInc += parseFloat(t.amount);
+          else totalExp += parseFloat(t.amount);
+        });
+        const bal = totalInc - totalExp;
+        const todayStr = new Date().toLocaleDateString('hi-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+        let msg = `📊 *दैनिक आय-व्यय बहीखाता रिपोर्ट* (${todayStr})
+
+`;
+        msg += `🟢 *कुल आय:* ₹${totalInc.toLocaleString('en-IN')}
+`;
+        msg += `🔴 *कुल व्यय:* ₹${totalExp.toLocaleString('en-IN')}
+`;
+        msg += `🔵 *शेष बचत (Balance):* ₹${bal.toLocaleString('en-IN')}
+
+`;
+
+        // Recent 5 transactions
+        if (state.transactions.length > 0) {
+          msg += `📝 *हाल के लेनदेन:*
+`;
+          const recent = [...state.transactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+          recent.forEach(t => {
+            const cat = state.categories.find(c => c.id === t.categoryId) || { name: 'सामान्य' };
+            const sign = t.type === 'income' ? '+₹' : '-₹';
+            msg += `• ${cat.name} (${t.mode}): ${sign}${parseFloat(t.amount).toLocaleString('en-IN')} ${t.note ? '[' + t.note + ']' : ''}
+`;
+          });
+        }
+
+        msg += `
+_डिजिटल बहीखाता ऐप द्वारा जनरेट किया गया_`;
+
+        const encoded = encodeURI(msg);
+        window.open(`https://api.whatsapp.com/send?text=${encoded}`, '_blank');
+      }
+
+      // --- EXCEL / CSV DOWNLOAD ---
+      function downloadCsvReport() {
+        if (state.transactions.length === 0) {
+          showToast('डाउनलोड के लिए कोई लेनदेन नहीं है', true);
+          return;
+        }
+
+        // CSV Header with UTF-8 BOM so Excel opens Hindi characters properly
+        let csvContent = '﻿';
+        csvContent += 'दिनांक,प्रकार,श्रेणी,भुगतान माध्यम,राशि (₹),विवरण (नोट)' + '\n';
+
+        state.transactions.forEach(t => {
+          const cat = state.categories.find(c => c.id === t.categoryId) || { name: 'अन्य' };
+          const typeStr = t.type === 'income' ? 'आय (+)' : 'व्यय (-)';
+          const row = [
+            `"${t.date || ''}"`,
+            `"${typeStr}"`,
+            `"${cat.name}"`,
+            `"${t.mode || 'Cash'}"`,
+            `"${t.amount}"`,
+            `"${(t.note || '').replace(/"/g, '""')}"`
+          ].join(',');
+          csvContent += row + '\r\n';
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `Dainik_Khata_Report_${new Date().toISOString().split('T')[0]}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showToast('Excel CSV फाइल डाउनलोड हो गई!');
+      }
+
+      // --- JSON BACKUP & RESTORE ---
+      function exportBackup() {
+        const backupData = {
+          version: '1.0',
+          exportDate: new Date().toISOString(),
+          categories: state.categories,
+          transactions: state.transactions,
+          budget: state.budget
+        };
+
+        const str = JSON.stringify(backupData, null, 2);
+        const blob = new Blob([str], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Khata_Backup_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        showToast('बैकअप फाइल डाउनलोड हो गई!');
+      }
+
+      function importBackup(file) {
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          try {
+            const data = JSON.parse(e.target.result);
+            if (Array.isArray(data.categories)) state.categories = data.categories;
+            if (Array.isArray(data.transactions)) state.transactions = data.transactions;
+            if (typeof data.budget === 'number') state.budget = data.budget;
+
+            saveCategories();
+            saveTransactions();
+            saveBudget();
+
+            renderCategorySelect();
+            calculateTotals();
+            renderTransactions();
+            renderCharts();
+            renderCategoryManagerList();
+
+            document.getElementById('settingsModal').classList.add('hidden');
+            showToast('बैकअप सफलतापूर्वक रीस्टोर हो गया!');
+          } catch (err) {
+            showToast('बैकअप फाइल अमान्य है!', true);
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      // --- SETUP EVENT LISTENERS ---
+      function setupEvents() {
+        // Theme toggle
+        document.getElementById('themeToggleBtn').addEventListener('click', toggleTheme);
+
+        // Language toggle (Hindi <-> English)
+        document.getElementById('langToggleBtn').addEventListener('click', () => {
+          state.lang = state.lang === 'hi' ? 'en' : 'hi';
+          document.getElementById('langToggleBtn').textContent = state.lang === 'hi' ? 'EN' : 'हिं';
+          try { localStorage.setItem('khata_lang', state.lang); } catch (e) {}
+          renderCategorySelect();
+          calculateTotals();
+          showToast(state.lang === 'hi' ? 'हिंदी भाषा चुनी गई' : 'Switched to English');
+        });
+
+        // Tabs navigation
+        const tabFormBtn = document.getElementById('tabFormBtn');
+        const tabHistoryBtn = document.getElementById('tabHistoryBtn');
+        const tabAnalyticsBtn = document.getElementById('tabAnalyticsBtn');
+
+        const viewForm = document.getElementById('viewForm');
+        const viewHistory = document.getElementById('viewHistory');
+        const viewAnalytics = document.getElementById('viewAnalytics');
+
+        function switchTab(tab) {
+          state.activeTab = tab;
+          [viewForm, viewHistory, viewAnalytics].forEach(v => v.classList.add('hidden'));
+          
+          tabFormBtn.className = 'flex-1 py-2 rounded-lg text-center transition text-slate-600 dark:text-slate-300 hover:text-slate-900 flex items-center justify-center space-x-1';
+          tabHistoryBtn.className = 'flex-1 py-2 rounded-lg text-center transition text-slate-600 dark:text-slate-300 hover:text-slate-900 flex items-center justify-center space-x-1';
+          tabAnalyticsBtn.className = 'flex-1 py-2 rounded-lg text-center transition text-slate-600 dark:text-slate-300 hover:text-slate-900 flex items-center justify-center space-x-1';
+
+          const activeClasses = 'flex-1 py-2 rounded-lg text-center transition bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm flex items-center justify-center space-x-1';
+
+          if (tab === 'form') {
+            viewForm.classList.remove('hidden');
+            tabFormBtn.className = activeClasses;
+          } else if (tab === 'history') {
+            viewHistory.classList.remove('hidden');
+            tabHistoryBtn.className = activeClasses;
+            renderTransactions();
+          } else if (tab === 'analytics') {
+            viewAnalytics.classList.remove('hidden');
+            tabAnalyticsBtn.className = activeClasses;
+            renderCharts();
+          }
+        }
+
+        tabFormBtn.addEventListener('click', () => switchTab('form'));
+        tabHistoryBtn.addEventListener('click', () => switchTab('history'));
+        tabAnalyticsBtn.addEventListener('click', () => switchTab('analytics'));
+
+        // Bottom dock nav
+        document.getElementById('navHomeBtn').addEventListener('click', () => switchTab('form'));
+        document.getElementById('navHistoryBtn').addEventListener('click', () => switchTab('history'));
+        
+        const catManagerModal = document.getElementById('categoryManagerModal');
+        document.getElementById('navCatManagerBtn').addEventListener('click', () => {
+          renderCategoryManagerList();
+          catManagerModal.classList.remove('hidden');
+        });
+        document.getElementById('closeCatManagerBtn').addEventListener('click', () => {
+          catManagerModal.classList.add('hidden');
+        });
+        document.getElementById('catMgrAddBtn').addEventListener('click', () => {
+          catManagerModal.classList.add('hidden');
+          openAddCategoryModal();
+        });
+
+        // Settings Modal
+        const settingsModal = document.getElementById('settingsModal');
+        document.getElementById('openSettingsModalBtn').addEventListener('click', () => {
+          settingsModal.classList.remove('hidden');
+        });
+        document.getElementById('navSettingsBtn').addEventListener('click', () => {
+          settingsModal.classList.remove('hidden');
+        });
+        document.getElementById('closeSettingsModalBtn').addEventListener('click', () => {
+          settingsModal.classList.add('hidden');
+        });
+
+        // Transaction Type Segmented Toggle
+        const typeExpenseBtn = document.getElementById('typeExpenseBtn');
+        const typeIncomeBtn = document.getElementById('typeIncomeBtn');
+
+        typeExpenseBtn.addEventListener('click', () => {
+          state.txnType = 'expense';
+          typeExpenseBtn.className = 'py-2 text-xs font-bold rounded-lg transition text-white bg-rose-600 shadow-sm flex items-center justify-center space-x-1';
+          typeIncomeBtn.className = 'py-2 text-xs font-bold rounded-lg transition text-slate-600 dark:text-slate-300 hover:text-slate-900 flex items-center justify-center space-x-1';
+          renderCategorySelect();
+        });
+
+        typeIncomeBtn.addEventListener('click', () => {
+          state.txnType = 'income';
+          typeIncomeBtn.className = 'py-2 text-xs font-bold rounded-lg transition text-white bg-emerald-600 shadow-sm flex items-center justify-center space-x-1';
+          typeExpenseBtn.className = 'py-2 text-xs font-bold rounded-lg transition text-slate-600 dark:text-slate-300 hover:text-slate-900 flex items-center justify-center space-x-1';
+          renderCategorySelect();
+        });
+
+        // Quick Add Amount Buttons
+        const amountInput = document.getElementById('amountInput');
+        document.querySelectorAll('.quick-add-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const addVal = parseFloat(btn.getAttribute('data-amt')) || 0;
+            const currentVal = parseFloat(amountInput.value) || 0;
+            amountInput.value = currentVal + addVal;
+          });
+        });
+
+        document.getElementById('clearAmountBtn').addEventListener('click', () => {
+          amountInput.value = '';
+          amountInput.focus();
+        });
+
+        // Save Transaction
+        document.getElementById('saveTransactionBtn').addEventListener('click', () => {
+          const amt = parseFloat(amountInput.value);
+          if (!amt || amt <= 0) {
+            showToast('कृपया वैध राशि दर्ज करें!', true);
+            amountInput.focus();
+            return;
+          }
+
+          const catSelect = document.getElementById('categorySelect');
+          const catId = catSelect.value;
+          if (!catId) {
+            showToast('कृपया पहले एक श्रेणी चुनें या बनाएं!', true);
+            return;
+          }
+
+          const mode = document.getElementById('paymentModeSelect').value;
+          const dateVal = document.getElementById('dateInput').value || new Date().toISOString().split('T')[0];
+          const note = document.getElementById('noteInput').value.trim();
+
+          const newTxn = {
+            id: 'txn_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+            type: state.txnType,
+            categoryId: catId,
+            mode: mode,
+            amount: amt,
+            date: dateVal,
+            note: note,
+            createdAt: new Date().toISOString()
+          };
+
+          state.transactions.unshift(newTxn);
+          saveTransactions();
+
+          // Reset inputs
+          amountInput.value = '';
+          document.getElementById('noteInput').value = '';
+
+          calculateTotals();
+          renderTransactions();
+          renderCharts();
+          showToast(state.txnType === 'expense' ? 'खर्च प्रविष्टि जुड़ गई!' : 'आय प्रविष्टि जुड़ गई!');
+        });
+
+        // Category Modal Handlers
+        const categoryModal = document.getElementById('categoryModal');
+        const catNameInput = document.getElementById('catNameInput');
+
+        function openAddCategoryModal() {
+          catNameInput.value = '';
+          categoryModal.classList.remove('hidden');
+          catNameInput.focus();
+        }
+
+        document.getElementById('openAddCategoryModalBtn').addEventListener('click', openAddCategoryModal);
+        document.getElementById('closeCatModalBtn').addEventListener('click', () => {
+          categoryModal.classList.add('hidden');
+        });
+
+        // Modal Emoji Picker
+        document.querySelectorAll('.emoji-opt').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.emoji-opt').forEach(b => {
+              b.classList.remove('bg-blue-100', 'dark:bg-blue-900/60', 'border-blue-500');
+              b.classList.add('border-transparent');
+            });
+            btn.classList.add('bg-blue-100', 'dark:bg-blue-900/60', 'border-blue-500');
+            state.selectedCatEmoji = btn.getAttribute('data-emoji');
+          });
+        });
+
+        // Modal Color Picker
+        document.querySelectorAll('.color-opt').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.color-opt').forEach(b => b.classList.remove('ring-2', 'ring-offset-2', 'ring-blue-500'));
+            btn.classList.add('ring-2', 'ring-offset-2', 'ring-blue-500');
+            state.selectedCatColor = btn.getAttribute('data-color');
+          });
+        });
+
+        // Modal Category Type
+        document.querySelectorAll('.cat-type-select-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.cat-type-select-btn').forEach(b => {
+              b.classList.remove('bg-white', 'dark:bg-slate-700', 'text-rose-600', 'text-emerald-600', 'shadow-xs');
+              b.classList.add('text-slate-600', 'dark:text-slate-300');
+            });
+            btn.classList.add('bg-white', 'dark:bg-slate-700', 'shadow-xs');
+            state.selectedCatType = btn.getAttribute('data-cattype');
+            if (state.selectedCatType === 'expense') btn.classList.add('text-rose-600');
+            else if (state.selectedCatType === 'income') btn.classList.add('text-emerald-600');
+          });
+        });
+
+        // Submit Category
+        document.getElementById('submitCategoryBtn').addEventListener('click', () => {
+          const name = catNameInput.value.trim();
+          if (!name) {
+            showToast('कृपया श्रेणी का नाम लिखें!', true);
+            catNameInput.focus();
+            return;
+          }
+
+          const newCat = {
+            id: 'cat_' + Date.now(),
+            name: name,
+            emoji: state.selectedCatEmoji || '🛍️',
+            color: state.selectedCatColor || '#3b82f6',
+            type: state.selectedCatType || 'expense'
+          };
+
+          state.categories.push(newCat);
+          saveCategories();
+          renderCategorySelect();
+
+          // Auto-select this newly created category in the dropdown
+          const select = document.getElementById('categorySelect');
+          select.value = newCat.id;
+
+          categoryModal.classList.add('hidden');
+          showToast(`नई श्रेणी "${newCat.name}" जुड़ गई!`);
+        });
+
+        // Budget Modal Handlers
+        const budgetModal = document.getElementById('budgetModal');
+        const budgetLimitInput = document.getElementById('budgetLimitInput');
+
+        document.getElementById('editBudgetBtn').addEventListener('click', () => {
+          budgetLimitInput.value = state.budget || '';
+          budgetModal.classList.remove('hidden');
+          budgetLimitInput.focus();
+        });
+
+        document.getElementById('closeBudgetModalBtn').addEventListener('click', () => {
+          budgetModal.classList.add('hidden');
+        });
+
+        document.getElementById('saveBudgetBtn').addEventListener('click', () => {
+          const val = parseFloat(budgetLimitInput.value) || 0;
+          state.budget = val;
+          saveBudget();
+          calculateTotals();
+          budgetModal.classList.add('hidden');
+          showToast('मासिक बजट लक्ष्य सेट हो गया!');
+        });
+
+        document.getElementById('clearBudgetBtn').addEventListener('click', () => {
+          state.budget = 0;
+          saveBudget();
+          calculateTotals();
+          budgetModal.classList.add('hidden');
+          showToast('बजट लक्ष्य हटा दिया गया');
+        });
+
+        // Filter Transactions (History View)
+        document.querySelectorAll('.filter-time-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-time-btn').forEach(b => {
+              b.classList.remove('bg-blue-600', 'text-white');
+              b.classList.add('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+            });
+            btn.classList.remove('bg-slate-100', 'dark:bg-slate-800', 'text-slate-600', 'dark:text-slate-300');
+            btn.classList.add('bg-blue-600', 'text-white');
+            state.filterTime = btn.getAttribute('data-time');
+            renderTransactions();
+          });
+        });
+
+        document.querySelectorAll('.filter-type-btn').forEach(btn => {
+          btn.addEventListener('click', () => {
+            document.querySelectorAll('.filter-type-btn').forEach(b => {
+              b.classList.remove('bg-slate-200', 'dark:bg-slate-700', 'text-slate-800', 'dark:text-white');
+              b.classList.add('bg-slate-100', 'dark:bg-slate-800');
+            });
+            btn.classList.remove('bg-slate-100', 'dark:bg-slate-800');
+            btn.classList.add('bg-slate-200', 'dark:bg-slate-700', 'text-slate-800', 'dark:text-white');
+            state.filterType = btn.getAttribute('data-type');
+            renderTransactions();
+          });
+        });
+
+        document.getElementById('searchTxnInput').addEventListener('input', (e) => {
+          state.searchTerm = e.target.value;
+          renderTransactions();
+        });
+
+        // Share & Download buttons
+        document.getElementById('shareWhatsAppBtn').addEventListener('click', shareWhatsAppReport);
+        document.getElementById('analyticsWaShareBtn').addEventListener('click', shareWhatsAppReport);
+
+        document.getElementById('downloadExcelBtn').addEventListener('click', downloadCsvReport);
+        document.getElementById('analyticsCsvBtn').addEventListener('click', downloadCsvReport);
+
+        // Backup Export / Import
+        document.getElementById('exportBackupBtn').addEventListener('click', exportBackup);
+        document.getElementById('importBackupFile').addEventListener('change', (e) => {
+          importBackup(e.target.files[0]);
+        });
+
+        // Reset Data with inline verification
+        let resetConfirmState = false;
+        const resetBtn = document.getElementById('resetAllDataBtn');
+        resetBtn.addEventListener('click', () => {
+          if (!resetConfirmState) {
+            resetConfirmState = true;
+            resetBtn.textContent = 'निश्चित हैं? दोबारा क्लिक करें';
+            resetBtn.classList.add('bg-red-800', 'animate-pulse');
+            setTimeout(() => {
+              resetConfirmState = false;
+              resetBtn.textContent = 'पूरा डेटा मिटाएं';
+              resetBtn.classList.remove('bg-red-800', 'animate-pulse');
+            }, 4000);
+            return;
+          }
+          resetConfirmState = false;
+          resetBtn.textContent = 'पूरा डेटा मिटाएं';
+          resetBtn.classList.remove('bg-red-800', 'animate-pulse');
+
+          state.categories = [];
+          state.transactions = [];
+          state.budget = 0;
+          saveCategories();
+          saveTransactions();
+          saveBudget();
+          renderCategorySelect();
+          calculateTotals();
+          renderTransactions();
+          renderCharts();
+          renderCategoryManagerList();
+          settingsModal.classList.add('hidden');
+          showToast('सारा डेटा रीसेट कर दिया गया!');
+        });
+      }
+
+      // Initialize App on DOM ready
+      document.addEventListener('DOMContentLoaded', () => {
+        loadState();
+        applyTheme();
+
+        // Set default date to today
+        const todayStr = new Date().toISOString().split('T')[0];
+        document.getElementById('dateInput').value = todayStr;
+
+        setupEvents();
+        renderCategorySelect();
+        calculateTotals();
+        renderCharts();
+      });
+    })();
+  </script>
+</body>
+</html>
