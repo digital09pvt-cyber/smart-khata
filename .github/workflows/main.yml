@@ -25,21 +25,21 @@ jobs:
         with:
           node-version: 20
 
+      - name: Prepare Web Directory
+        run: |
+          mkdir -p www
+          if [ -f index.html ]; then
+            cp index.html www/index.html
+          else
+            echo "<h1>Smart Khata</h1>" > www/index.html
+          fi
+
       - name: Setup Project & Capacitor
         run: |
-          if [ ! -f package.json ]; then
-            npm init -y
-          fi
-          npm install @capacitor/core @capacitor/cli @capacitor/android
-          cat << 'CFG' > capacitor.config.json
-          {
-            "appId": "com.smartkhata.app",
-            "appName": "SmartKhata",
-            "webDir": ".",
-            "bundledWebRuntime": false
-          }
-          CFG
-          npx cap add android || true
+          npm init -y
+          npm install @capacitor/core@latest @capacitor/cli@latest @capacitor/android@latest
+          node -e "const fs = require('fs'); fs.writeFileSync('capacitor.config.json', JSON.stringify({appId: 'com.smartkhata.app', appName: 'SmartKhata', webDir: 'www', bundledWebRuntime: false}, null, 2));"
+          npx cap add android
           npx cap sync android
 
       - name: Build Debug APK with Gradle
